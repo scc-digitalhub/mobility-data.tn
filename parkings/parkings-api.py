@@ -8,14 +8,14 @@ import requests
 import time
 import re
 import pytz
-  
+
 from botocore.client import Config
 from datetime import datetime
 
 from prometheus_client import multiprocess
-from prometheus_client import CollectorRegistry, Counter, Summary, REGISTRY, generate_latest,CONTENT_TYPE_LATEST
+from prometheus_client import CollectorRegistry, Counter, Summary, REGISTRY, generate_latest, CONTENT_TYPE_LATEST
 
-#config
+# config
 # INTERVAL='1h'
 
 API_USERNAME = os.environ.get('API_USERNAME')
@@ -25,13 +25,14 @@ S3_ACCESS_KEY = os.environ.get('S3_ACCESS_KEY')
 S3_SECRET_KEY = os.environ.get('S3_SECRET_KEY')
 S3_BUCKET = os.environ.get('S3_BUCKET')
 
-#static setup 
-ENDPOINT_PARKINGS="https://os.smartcommunitylab.it/core.mobility/getparkingsbyagency/{0}"
-CITIES=['COMUNE_DI_TRENTO', 'COMUNE_DI_ROVERETO']
-PARTITIONED=True
+# static setup
+ENDPOINT_PARKINGS = "https://os.smartcommunitylab.it/core.mobility/getparkingsbyagency/{0}"
+CITIES = ['COMUNE_DI_TRENTO', 'COMUNE_DI_ROVERETO']
+PARTITIONED = True
 
-#prometheus metrics
-REQUEST_TIME = Summary('parkings_api_request_processing_seconds', 'Time spent processing request')
+# prometheus metrics
+REQUEST_TIME = Summary(
+    'parkings_api_request_processing_seconds', 'Time spent processing request')
 COUNTER_TOTAL = Counter('parkings_api_total', 'Number of data frames read')
 
 
@@ -47,15 +48,16 @@ def read_df_from_url(url, context):
 
 def metrics(context, event):
     context.logger.info('called metrics')
-    #use multiprocess metrics otherwise data collected from different processors is not included
+    # use multiprocess metrics otherwise data collected from different processors is not included
     registry = CollectorRegistry()
     multiprocess.MultiProcessCollector(registry)
     output = generate_latest(registry).decode('UTF-8')
 
     return context.Response(body=output,
-        headers={},
-        content_type=CONTENT_TYPE_LATEST,
-        status_code=200)       
+                            headers={},
+                            content_type=CONTENT_TYPE_LATEST,
+                            status_code=200)
+
 
 def handler(context, event):
     try:
@@ -65,25 +67,25 @@ def handler(context, event):
                 return metrics(context, event)
             else:
                 return context.Response(body='Error not supported',
-                        headers={},
-                        content_type='text/plain',
-                        status_code=405)  
+                                        headers={},
+                                        content_type='text/plain',
+                                        status_code=405)
         else:
             return process(context, event)
 
-        
     except Exception as e:
-        context.logger.error('Error: '+str(e))        
+        context.logger.error('Error: '+str(e))
         return context.Response(body='Error '+str(e),
-                        headers={},
-                        content_type='text/plain',
-                        status_code=500)   
- 
+                                headers={},
+                                content_type='text/plain',
+                                status_code=500)
+
+
 @REQUEST_TIME.time()
-def process(context, event): 
-    #params - expect json
+def process(context, event):
+    # params - expect json
     cities = CITIES
-    
+
     if(event.content_type == 'application/json'):
         if 'city' in event.body:
             cities = [event.body['city']]
@@ -92,10 +94,9 @@ def process(context, event):
         citystring = event.body.decode('utf-8').strip()
         if citystring:
             cities = [citystring]
-           
 
     context.logger.info('fetch data from API')
-    
+
     now = datetime.today().astimezone(pytz.UTC)
     day = now.strftime('%Y%m%d')
     hour = now.strftime('%H')
@@ -103,50 +104,55 @@ def process(context, event):
     # init counter for gauge
     df_total = 0
 
-    #init s3 client
+    # init s3 client
     s3 = boto3.client('s3',
-                    endpoint_url=S3_ENDPOINT,
-                    aws_access_key_id=S3_ACCESS_KEY,
-                    aws_secret_access_key=S3_SECRET_KEY,
-                    config=Config(signature_version='s3v4'),
-                    region_name='us-east-1')    
-
+                      endpoint_url=S3_ENDPOINT,
+                      aws_access_key_id=S3_ACCESS_KEY,
+                      aws_secret_access_key=S3_SECRET_KEY,
+                      config=Config(signature_version='s3v4'),
+                      region_name='us-east-1')
 
     for city in cities:
         context.logger.info('fetch data for city '+city)
         if(PARTITIONED):
-            daypath = 'year='+now.strftime('%Y')+'/month='+now.strftime('%m')+'/day='+now.strftime('%d')+'/hour='+now.strftime('%H')
-            filename='city={}/{}/parkings-{}-{}'.format(city,daypath,city,now.strftime('%Y%m%dT%H%M%S'))
+            daypath = 'year='+now.strftime('%Y')+'/month='+now.strftime(
+                '%m')+'/day='+now.strftime('%d')+'/hour='+now.strftime('%H')
+            filename = 'city={}/{}/parkings-{}-{}'.format(
+                city, daypath, city, now.strftime('%Y%m%dT%H%M%S'))
         else:
-            filename='{}/{}/{}/parkings-{}-{}'.format(city,day,hour,city,now.strftime('%Y%m%dT%H%M%S'))
+            filename = '{}/{}/{}/parkings-{}-{}'.format(
+                city, day, hour, city, now.strftime('%Y%m%dT%H%M%S'))
 
-        #load traffic
+        # load traffic
         context.logger.info('read parkings for '+city)
         df = read_df_from_url(ENDPOINT_PARKINGS.format(city), context)
         df_count = len(df)
-        context.logger.info('num read '+str(df_count))            
+        context.logger.info('num read '+str(df_count))
 
         if(df_count > 0):
             # add to total
             df_total = df_total + df_count
-           
+
             # extract coordinates
-            df[['latitude','longitude']] = pd.DataFrame(df.position.tolist(), columns=['latitude', 'longitude'])
+            df[['latitude', 'longitude']] = pd.DataFrame(
+                df.position.tolist(), columns=['latitude', 'longitude'])
 
             # add time column with now as value
             df['timestamp'] = now
 
-            #rename and drop columns
-            df = df[['timestamp','name','description','slotsAvailable','slotsTotal','monitored','latitude','longitude']]
+            # rename and drop columns
+            df = df[['timestamp', 'name', 'description', 'slotsAvailable',
+                     'slotsTotal', 'monitored', 'latitude', 'longitude']]
 
-            if( not PARTITIONED):
+            if(not PARTITIONED):
                 # add city column
                 df['city'] = city
 
             # write to io buffer
             context.logger.info('write parquet to buffer')
             parquetio = io.BytesIO()
-            df.to_parquet(parquetio, engine='pyarrow',allow_truncated_timestamps=True)
+            df.to_parquet(parquetio, engine='pyarrow',
+                          allow_truncated_timestamps=True, coerce_timestamps="ms")
             # seek to start otherwise upload will be 0
             parquetio.seek(0)
 
@@ -155,11 +161,11 @@ def process(context, event):
 
             # cleanup
             del parquetio
-            
-        del df
-    #end cities loop
 
-    #add total to counter
+        del df
+    # end cities loop
+
+    # add total to counter
     COUNTER_TOTAL.inc(df_total)
 
     context.logger.info('done.')
@@ -168,6 +174,3 @@ def process(context, event):
                             headers={},
                             content_type='text/plain',
                             status_code=200)
-
-
-
