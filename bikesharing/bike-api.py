@@ -115,7 +115,7 @@ def process(context, event):
     for city in cities:
         context.logger.info('fetch data for city '+city)
         if(PARTITIONED):
-            daypath = 'year='+now.strftime('%Y')+'/month='+now.strftime('%m')+'/day='+now.strftime('%d')+'/hour='+now.strftime('%H')+'/'
+            daypath = 'year='+now.strftime('%Y')+'/month='+now.strftime('%m')+'/day='+now.strftime('%d')+'/hour='+now.strftime('%H')
             filename='city={}/{}/bike-{}-{}'.format(city,daypath,city,now.strftime('%Y%m%dT%H%M%S'))
         else:
             filename='{}/{}/{}/bike-{}-{}'.format(city,day,hour,city,now.strftime('%Y%m%dT%H%M%S'))
