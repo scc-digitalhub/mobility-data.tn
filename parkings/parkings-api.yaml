@@ -1,0 +1,67 @@
+metadata:
+  name: parkings-api
+  labels:
+    nuclio.io/project-name: parkings
+  resourceVersion: "111875218"
+spec:
+  handler: "parkings-api:handler"
+  runtime: "python:3.6"
+  env:
+    - name: S3_ENDPOINT
+      value: ""
+    - name: S3_ACCESS_KEY
+      value: ""
+    - name: S3_SECRET_KEY
+      value: ""
+    - name: S3_BUCKET
+      value: ""
+    - name: prometheus_multiproc_dir
+      value: /tmp
+  resources:
+    limits:
+      cpu: 250m
+      memory: 256M
+    requests:
+      cpu: 250m
+      memory: 128M
+  imageHash: "1637764182711019341"
+  minReplicas: 1
+  maxReplicas: 1
+  triggers:
+    cron5m:
+      class: ""
+      kind: cron
+      name: cron5m
+      attributes:
+        interval: 5m
+  version: -1
+  alias: latest
+  build:
+    path: "https://github.com/scc-digitalhub/mobility-data.tn"
+    noCache: true
+    commands:
+      - 'pip install boto3'
+      - 'pip install pandas'
+      - 'pip install pyarrow'
+      - 'pip install requests'
+      - 'pip install prometheus_client'
+    runtimeAttributes:
+      repositories: []
+    codeEntryType: github
+    codeEntryAttributes:
+      branch: master
+      headers:
+        Authorization: ""
+      workDir: parkings/parkings-api.py
+    timestamp: 1637764303
+    image: ""
+    offline: false
+    dependencies: []
+  imagePullSecrets: registry-credentials
+  loggerSinks:
+    - level: info
+  platform: {}
+  readinessTimeoutSeconds: 180
+  serviceType: NodePort
+  eventTimeout: ""
+  waitReadinessTimeoutBeforeFailure: false

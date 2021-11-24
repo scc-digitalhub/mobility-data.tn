@@ -1,0 +1,72 @@
+metadata:
+  name: here-trentino-api
+  labels:
+    nuclio.io/project-name: traffic-here
+  resourceVersion: "111876215"
+spec:
+  handler: "here-api-v2:handler"
+  runtime: "python:3.6"
+  env:
+    - name: S3_ENDPOINT
+      value: ""
+    - name: S3_ACCESS_KEY
+      value: ""
+    - name: S3_SECRET_KEY
+      value: ""
+    - name: S3_BUCKET
+      value: ""
+    - name: HERE_APP_ID
+      value: ""
+    - name: HERE_APP_CODE
+      value: ""
+    - name: prometheus_multiproc_dir
+      value: /tmp
+    - name: BPOINTS_PARQUET
+      value: config/trentino-boundpoints.parquet
+    - name: BBOX
+      value: "45.667805,10.446625;46.547528,11.965485"
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512M
+    requests:
+      cpu: 250m
+      memory: 256M
+  imageHash: "1637764591143342422"
+  minReplicas: 1
+  maxReplicas: 1
+  triggers:
+    cron15m:
+      class: ""
+      kind: cron
+      name: cron15m
+      attributes:
+        interval: 15m
+  version: 1
+  alias: latest
+  build:
+    noCache: true
+    baseImage: "python:3.6"
+    commands:
+      - 'pip install boto3'
+      - 'pip install pandas'
+      - 'pip install pyarrow'
+      - 'pip install requests'
+      - 'pip install prometheus_client'
+    runtimeAttributes:
+      repositories: []
+    codeEntryType: github
+    timestamp: 1637763734
+    path: "https://github.com/scc-digitalhub/mobility-data.tn"
+    codeEntryAttributes:
+      branch: master
+      headers:
+        Authorization: ""
+      workDir: traffic-here/here-api-v2.py
+  imagePullSecrets: registry-credentials
+  loggerSinks:
+    - level: debug
+  platform: {}
+  readinessTimeoutSeconds: 180
+  serviceType: NodePort
+  eventTimeout: ""

@@ -1,0 +1,69 @@
+metadata:
+  name: tn-api
+  labels:
+    nuclio.io/project-name: traffic-tn
+  resourceVersion: "111877608"
+spec:
+  handler: "tn-api:handler"
+  runtime: "python:3.6"
+  env:
+    - name: API_USERNAME
+      value: ""
+    - name: API_PASSWORD
+      value: ""
+    - name: S3_ENDPOINT
+      value: ""
+    - name: S3_ACCESS_KEY
+      value: ""
+    - name: S3_SECRET_KEY
+      value: ""
+    - name: S3_BUCKET
+      value: ""
+    - name: INTERVAL
+      value: 1h
+    - name: prometheus_multiproc_dir
+      value: /tmp
+  resources:
+    limits:
+      cpu: 250m
+      memory: 512M
+    requests:
+      cpu: 250m
+      memory: 256M
+  imageHash: "1637764795130070615"
+  minReplicas: 1
+  maxReplicas: 1
+  triggers:
+    cron1h:
+      class: ""
+      kind: cron
+      name: cron1h
+      attributes:
+        schedule: "0 5 * * * *"
+  version: -1
+  alias: latest
+  build:
+    path: "https://github.com/scc-digitalhub/mobility-data.tn"
+    noCache: true
+    commands:
+      - 'pip install boto3'
+      - 'pip install pandas'
+      - 'pip install pyarrow'
+      - 'pip install requests'
+      - 'pip install prometheus_client'
+    runtimeAttributes:
+      repositories: []
+    codeEntryType: github
+    codeEntryAttributes:
+      branch: master
+      headers:
+        Authorization: ""
+      workDir: traffic-tn/tn-api.py
+    timestamp: 1637764915
+  imagePullSecrets: registry-credentials
+  loggerSinks:
+    - level: debug
+  platform: {}
+  readinessTimeoutSeconds: 240
+  serviceType: NodePort
+  eventTimeout: ""
