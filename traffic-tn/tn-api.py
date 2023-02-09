@@ -33,7 +33,7 @@ ENDPOINT_TRAFFIC="https://tn.smartcommunitylab.it/trento.mobilitydatawrapper/tra
 ENDPOINT_POSITIONS="https://tn.smartcommunitylab.it/trento.mobilitydatawrapper/positions/{0}"
 AGGREGATE="By5m"
 AGGREGATE_TIME=5*60*1000
-TYPE=['NarxBikes','NarxPedestrians','RDT','Spot']
+TYPE=['Narx','RDT','Spot']
 
 #prometheus metrics
 REQUEST_TIME = Summary('tn_api_request_processing_seconds', 'Time spent processing request')
@@ -201,10 +201,8 @@ def process(context, event):
                 df_total = df_total + df_count
 
                 #increment specific counter for datatype
-                if datatype == 'NarxPedestrians':
+                if datatype == 'Narx':
                     COUNTER_NARX.inc(df_count)
-                elif datatype == 'NarxBikes':
-                    COUNTER_NARX.inc(df_count)                    
                 elif datatype == 'RDT':
                     COUNTER_RDT.inc(df_count)
                 elif datatype == 'Spot':
